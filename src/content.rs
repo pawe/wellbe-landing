@@ -28,10 +28,12 @@ pub const PRINCIPLES: &[Principle] = &[
     Principle {
         over: "People's wellbeing",
         under: "profit",
-        body: "Nobody's attention is for sale here. No advertising, no engagement targets, no feed \
-               tuned to keep you scrolling past your bedtime. If the healthy thing for you today is \
-               to close the app and go and see someone, the app should help you do exactly that and \
-               count it as a success.",
+        body: "We are not going to farm your attention. No engagement targets, no feed tuned to \
+               keep you scrolling past your bedtime, no profile of you assembled so that somebody \
+               can aim things at it. If the healthy thing for you today is to close the app and go \
+               and see someone, the app should help you do that and count it as a success. How this \
+               gets paid for is still an open question, advertising included — but not in any form \
+               that needs us to hold on to your attention or to know things about you.",
     },
     Principle {
         over: "Valuable discussion",
