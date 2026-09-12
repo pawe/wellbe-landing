@@ -13,11 +13,16 @@ pub struct Principle {
 }
 
 pub const SLOGAN_LEAD: &str =
-    "wellbe.social helps you connect and share with the people in your life.";
+    "wellbe.social will help you connect and share with the people in your life.";
 pub const SLOGAN_REST: &str = "In a healthy way. On your terms.";
 
-pub const FOOTNOTE: &str = "That first line is, almost word for word, how Facebook described itself for years. \
-It was a good promise. We would like to be the ones who keep it.";
+/// The paragraph under the slogan.
+pub const HERO_INTRO: &str = "We are going to build a place to keep up with the people who matter to you, \
+without farming your attention to pay for it. This page is where we say what we are going to be, before \
+we ask you to trust us with anything — and where you put your name down.";
+
+pub const FOOTNOTE: &str = "That first line is how Facebook described itself for years, give or take a tense. \
+It was a good promise. We would like to be the ones who actually keep it.";
 
 pub const PRINCIPLES: &[Principle] = &[
     Principle {

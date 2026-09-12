@@ -1,8 +1,8 @@
 # wellbe.social — landing
 
-The page people land on before wellbe.social exists, and the waiting list behind it.
+The page people land on while wellbe.social is still being built, and the waiting list behind it.
 
-> wellbe.social helps you connect and share with the people in your life.
+> wellbe.social will help you connect and share with the people in your life.
 > In a healthy way. On your terms.
 
 Rust ([axum]) and Postgres ([sqlx]), server-rendered with [askama]. No JavaScript

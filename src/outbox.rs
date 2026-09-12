@@ -68,9 +68,10 @@ impl Message {
                 "Hello {contact_name},\n\n\
                  {from_name} joined the waiting list for wellbe.social and asked us to let you \
                  know. That is the whole message — there is nothing you have to do.\n\n\
-                 wellbe.social is a non-profit building a place to keep up with the people in \
-                 your life without being farmed for attention. It is not ready yet. If you would \
-                 like to be told when it is: https://wellbe.social\n\n\
+                 wellbe.social is a non-profit that is going to build a place to keep up with \
+                 the people in your life without being farmed for attention. We are still \
+                 building it. If you would like to be told when it is ready: \
+                 https://wellbe.social\n\n\
                  We received your address from {from_name} for this one message. We are not \
                  adding you to anything, and unless you sign up yourself you will not hear from \
                  us again.{SIGN_OFF}"

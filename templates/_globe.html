@@ -1,0 +1,75 @@
+{# Inline, so it costs no extra request and inherits the page's colours in both
+   themes. Decorative, but described for anyone who cannot see it. #}
+<svg class="globe" viewBox="0 0 400 400" role="img" aria-labelledby="globe-title" focusable="false">
+  <title id="globe-title">A globe, with people around it joined to one another by lines</title>
+
+  <defs>
+    <clipPath id="globe-clip"><circle cx="200" cy="200" r="148"/></clipPath>
+  </defs>
+
+  <circle class="globe-body" cx="200" cy="200" r="148"/>
+
+  <g clip-path="url(#globe-clip)">
+    <!-- meridians -->
+    <ellipse class="globe-grid" cx="200" cy="200" rx="100" ry="148"/>
+    <ellipse class="globe-grid" cx="200" cy="200" rx="50" ry="148"/>
+    <line class="globe-grid" x1="200" y1="52" x2="200" y2="348"/>
+    <!-- parallels, flattened so the sphere reads as tilted toward you -->
+    <ellipse class="globe-grid" cx="200" cy="200" rx="148" ry="24"/>
+    <ellipse class="globe-grid" cx="200" cy="148" rx="138" ry="20"/>
+    <ellipse class="globe-grid" cx="200" cy="252" rx="138" ry="20"/>
+    <ellipse class="globe-grid" cx="200" cy="100" rx="109" ry="15"/>
+    <ellipse class="globe-grid" cx="200" cy="300" rx="109" ry="15"/>
+  </g>
+
+  <circle class="globe-rim" cx="200" cy="200" r="148"/>
+
+  <!-- who is connected to whom -->
+  <path class="globe-link" d="M164.3 90.2 Q222.7 113.5 291.1 98.8"/>
+  <path class="globe-link" d="M164.3 90.2 Q129.5 155.0 63.8 200.0"/>
+  <path class="globe-link" d="M291.1 98.8 Q284.2 165.1 314.3 216.1"/>
+  <path class="globe-link" d="M314.3 216.1 Q273.1 255.9 263.9 320.2"/>
+  <path class="globe-link" d="M263.9 320.2 Q199.7 288.5 135.4 295.7"/>
+  <path class="globe-link" d="M135.4 295.7 Q117.7 239.2 63.8 200.0"/>
+  <path class="globe-link" d="M164.3 90.2 Q178.0 165.6 182 226"/>
+  <path class="globe-link" d="M314.3 216.1 Q239.5 217.3 182 226"/>
+  <path class="globe-link" d="M135.4 295.7 Q166.1 249.9 182 226"/>
+  <path class="globe-link" d="M291.1 98.8 Q230.0 169.2 182 226"/>
+
+  <!-- the people -->
+  <g class="globe-person" transform="translate(164.3 90.2)">
+    <circle class="globe-person-halo" r="12.5"/>
+    <circle class="globe-person-head" cy="-3.4" r="3.7"/>
+    <path class="globe-person-body" d="M-5.6 5.4a5.6 5.6 0 0 1 11.2 0"/>
+  </g>
+  <g class="globe-person" transform="translate(291.1 98.8)">
+    <circle class="globe-person-halo" r="12.5"/>
+    <circle class="globe-person-head" cy="-3.4" r="3.7"/>
+    <path class="globe-person-body" d="M-5.6 5.4a5.6 5.6 0 0 1 11.2 0"/>
+  </g>
+  <g class="globe-person" transform="translate(314.3 216.1)">
+    <circle class="globe-person-halo" r="12.5"/>
+    <circle class="globe-person-head" cy="-3.4" r="3.7"/>
+    <path class="globe-person-body" d="M-5.6 5.4a5.6 5.6 0 0 1 11.2 0"/>
+  </g>
+  <g class="globe-person" transform="translate(263.9 320.2)">
+    <circle class="globe-person-halo" r="12.5"/>
+    <circle class="globe-person-head" cy="-3.4" r="3.7"/>
+    <path class="globe-person-body" d="M-5.6 5.4a5.6 5.6 0 0 1 11.2 0"/>
+  </g>
+  <g class="globe-person" transform="translate(135.4 295.7)">
+    <circle class="globe-person-halo" r="12.5"/>
+    <circle class="globe-person-head" cy="-3.4" r="3.7"/>
+    <path class="globe-person-body" d="M-5.6 5.4a5.6 5.6 0 0 1 11.2 0"/>
+  </g>
+  <g class="globe-person" transform="translate(63.8 200.0)">
+    <circle class="globe-person-halo" r="12.5"/>
+    <circle class="globe-person-head" cy="-3.4" r="3.7"/>
+    <path class="globe-person-body" d="M-5.6 5.4a5.6 5.6 0 0 1 11.2 0"/>
+  </g>
+  <g class="globe-person" transform="translate(182 226)">
+    <circle class="globe-person-halo" r="12.5"/>
+    <circle class="globe-person-head" cy="-3.4" r="3.7"/>
+    <path class="globe-person-body" d="M-5.6 5.4a5.6 5.6 0 0 1 11.2 0"/>
+  </g>
+</svg>

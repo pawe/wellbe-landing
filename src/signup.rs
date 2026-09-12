@@ -199,6 +199,19 @@ impl RawForm {
         form
     }
 
+    /// Whether the optional sections have anything in them. The page keeps
+    /// those sections folded away until they do, so that a form somebody
+    /// bounced off does not hide the half of it they had already filled in.
+    pub fn has_contacts(&self) -> bool {
+        self.contacts
+            .iter()
+            .any(|row| !row.name.trim().is_empty() || !row.email.trim().is_empty())
+    }
+
+    pub fn has_watches(&self) -> bool {
+        self.watches.iter().any(|watch| !watch.trim().is_empty())
+    }
+
     /// Pad the form back out so the re-rendered page still offers spare rows.
     pub fn padded(mut self) -> Self {
         while self.contacts.len() < BLANK_CONTACT_ROWS {

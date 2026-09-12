@@ -141,7 +141,13 @@ a:hover { color: var(--accent); }
   margin: 0;
 }
 
-.hero-slogan { font-size: clamp(2.1rem, 6.2vw, 3.9rem); }
+/* Sized against the column it sits in, not the whole window: above the
+   two-column breakpoint the slogan has roughly half the width to play with. */
+.hero-slogan { font-size: clamp(2.05rem, 5.6vw, 3.5rem); }
+
+@media (min-width: 62rem) {
+  .hero-slogan { font-size: clamp(2.1rem, 3.5vw, 2.95rem); }
+}
 .display-sm { font-size: clamp(1.7rem, 3.6vw, 2.4rem); }
 
 .eyebrow {
@@ -166,7 +172,19 @@ a:hover { color: var(--accent); }
 .hero {
   max-width: var(--page);
   margin-inline: auto;
-  padding: clamp(3rem, 9vw, 6rem) 1.5rem clamp(2.5rem, 6vw, 4rem);
+  padding: clamp(2.5rem, 7vw, 4.5rem) 1.5rem clamp(2.5rem, 6vw, 4rem);
+  display: grid;
+  gap: clamp(2.5rem, 5vw, 3.5rem);
+  align-items: start;
+}
+
+/* Wide enough for the slogan and the form to sit side by side without either
+   of them being squeezed. Below this they stack, slogan first. */
+@media (min-width: 62rem) {
+  .hero { grid-template-columns: minmax(0, 1fr) minmax(21rem, 25rem); }
+  /* The form is right there; a button pointing at it would be silly.
+     Scoped to the parent so it outranks `.button`, which is defined later. */
+  .hero-actions .hero-jump { display: none; }
 }
 
 .hero-rest { color: var(--ink-faint); }
@@ -182,7 +200,89 @@ a:hover { color: var(--accent); }
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-  margin: 2.25rem 0 0;
+  margin: 2rem 0 0;
+}
+
+/* ---------------------------------------------------------------- globe -- */
+
+.globe {
+  display: block;
+  width: 100%;
+  max-width: 24rem;
+  height: auto;
+  margin: clamp(2rem, 4vw, 3rem) 0 0;
+  overflow: visible;
+}
+
+.globe-body { fill: var(--accent-wash); }
+
+.globe-rim {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.6;
+  opacity: 0.45;
+}
+
+.globe-grid {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.1;
+  opacity: 0.3;
+}
+
+.globe-link {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+
+/* Sits under each figure so the links stop cleanly at the person rather than
+   running through them. */
+.globe-person-halo { fill: var(--ground); }
+.globe-person-head,
+.globe-person-body { fill: var(--accent); }
+.globe-person-body { stroke: none; }
+
+@media (max-width: 34rem) {
+  .globe { max-width: 16rem; margin-inline: auto; }
+}
+
+/* ------------------------------------------------------- the signup card -- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  padding: clamp(1.25rem, 3vw, 1.85rem);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -18px rgb(0 0 0 / 0.35);
+}
+
+.card-title {
+  margin: 0.35rem 0 0;
+  font-family: var(--serif);
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+.card-lede {
+  margin: 0.7rem 0 0;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+
+/* Capped so that on a tablet, where the card sits below the slogan and could
+   otherwise run the full width of the page, the labels stay close to their
+   fields instead of being stranded at the other end of a long line. */
+.hero-join { max-width: 30rem; }
+
+@media (min-width: 62rem) {
+  /* Long forms are easier to work through when the card can scroll past with
+     the page rather than pinning the whole hero to its height. */
+  .hero-join { position: sticky; top: 1.5rem; max-width: none; }
 }
 
 .slab {
@@ -304,24 +404,49 @@ a:hover { color: var(--accent); }
   max-width: var(--measure);
 }
 
-.form { margin-top: 2.5rem; max-width: 42rem; }
+.form { margin-top: 1.5rem; }
 
-.field-group {
-  border: 0;
-  border-top: 1px solid var(--rule);
-  margin: 0;
-  padding: 1.75rem 0 2.25rem;
+/* The two optional sections. Closed until there is something in them, so the
+   card stays a form somebody will actually finish. */
+.fold {
+  margin: 1.25rem 0 0;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--ground-sunk);
 }
-.field-group-last { padding-bottom: 0.5rem; }
 
-.legend {
-  font-family: var(--serif);
-  font-size: 1.2rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  padding: 0 0.6rem 0 0;
-  color: var(--ink);
+.fold-summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  list-style: none;
+  font-size: 0.93rem;
 }
+.fold-summary::-webkit-details-marker { display: none; }
+
+.fold-title { font-weight: 600; color: var(--ink); }
+.fold-note { color: var(--ink-faint); font-size: 0.8rem; font-style: italic; flex: none; }
+
+/* A chevron that turns, rather than the browser's default triangle. */
+.fold-title::before {
+  content: "";
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-right: 0.6rem;
+  border-right: 1.8px solid var(--accent);
+  border-bottom: 1.8px solid var(--accent);
+  transform: translateY(-0.12em) rotate(-45deg);
+  transition: transform 140ms ease;
+}
+.fold[open] .fold-title::before { transform: translateY(-0.05em) rotate(45deg); }
+
+.fold-body { padding: 0 1rem 1.1rem; }
+
+.field-spaced { margin-top: 1.5rem; }
 
 .group-note {
   margin: 0 0 1.5rem;
@@ -425,7 +550,7 @@ input:focus, textarea:focus, select:focus {
 
 /* Repeating rows: contacts and watched addresses. */
 
-.rows { display: grid; gap: 1.25rem; }
+.rows { display: grid; gap: 1rem; }
 
 .row {
   padding: 1.1rem 1.2rem;
@@ -434,17 +559,15 @@ input:focus, textarea:focus, select:focus {
   border-radius: var(--radius);
 }
 
+/* auto-fit rather than a media query: these rows now live in a column whose
+   width has little to do with the width of the window. */
 .row-contact {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
   gap: 0 1rem;
 }
 .row-contact .check-inline { grid-column: 1 / -1; margin-top: 0.5rem; }
 .row-contact .field:nth-last-of-type(-n + 2) { margin-bottom: 0.25rem; }
-
-@media (max-width: 34rem) {
-  .row-contact { grid-template-columns: minmax(0, 1fr); }
-}
 
 .row-watch .field { margin-bottom: 0; }
 
