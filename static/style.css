@@ -1,0 +1,553 @@
+/*
+ * wellbe.social — landing.
+ *
+ * Deliberately one hand-written stylesheet with no build step, no framework
+ * and no web fonts. Loading a font from a third party would hand every
+ * visitor's IP address to that third party, on the very page where we promise
+ * not to do things like that. System fonts it is.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  --ground:        #faf7f2;
+  --ground-sunk:   #f2ece2;
+  --surface:       #fffdfa;
+  --ink:           #1b1917;
+  --ink-soft:      #4e473e;
+  --ink-faint:     #7d7468;
+  --rule:          #e3dbcd;
+  --rule-strong:   #cec3b1;
+  --accent:        #2f6b4f;
+  --accent-deep:   #1f4c37;
+  --accent-wash:   #e9f1ea;
+  --warn:          #8a3a1e;
+  --warn-wash:     #fbeee7;
+
+  --measure: 34rem;
+  --page: 62rem;
+  --radius: 10px;
+
+  --serif: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground:      #14130f;
+    --ground-sunk: #100f0c;
+    --surface:     #1c1a15;
+    --ink:         #f3eee4;
+    --ink-soft:    #c2bab0;
+    --ink-faint:   #8d8579;
+    --rule:        #2f2b23;
+    --rule-strong: #453f34;
+    --accent:      #84c4a2;
+    --accent-deep: #a8d9bf;
+    --accent-wash: #1a2620;
+    --warn:        #e9a683;
+    --warn-wash:   #2a1a12;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent-deep); text-underline-offset: 0.18em; }
+a:hover { color: var(--accent); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--accent);
+  color: #fff;
+  padding: 0.75rem 1rem;
+  z-index: 10;
+}
+.skip:focus { left: 0; }
+
+/* ------------------------------------------------------------- masthead -- */
+
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem 1.5rem;
+  max-width: var(--page);
+  margin-inline: auto;
+  padding: 1.75rem 1.5rem 1.25rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-decoration: none;
+}
+.wordmark:hover { color: var(--ink); }
+
+.wordmark-mark {
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-wash);
+  flex: none;
+}
+
+.wordmark-dot { color: var(--ink-faint); font-weight: 400; }
+
+.masthead-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.02em;
+}
+
+/* ---------------------------------------------------------- typography -- */
+
+.display {
+  font-family: var(--serif);
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  line-height: 1.12;
+  text-wrap: balance;
+  margin: 0;
+}
+
+.hero-slogan { font-size: clamp(2.1rem, 6.2vw, 3.9rem); }
+.display-sm { font-size: clamp(1.7rem, 3.6vw, 2.4rem); }
+
+.eyebrow {
+  margin: 0 0 1rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.lede {
+  font-size: 1.15rem;
+  color: var(--ink-soft);
+  max-width: var(--measure);
+}
+
+.quiet { color: var(--ink-faint); font-size: 0.95rem; }
+
+/* ----------------------------------------------------------- structure -- */
+
+.hero {
+  max-width: var(--page);
+  margin-inline: auto;
+  padding: clamp(3rem, 9vw, 6rem) 1.5rem clamp(2.5rem, 6vw, 4rem);
+}
+
+.hero-rest { color: var(--ink-faint); }
+
+.hero-sub {
+  margin: 1.75rem 0 0;
+  max-width: var(--measure);
+  font-size: 1.1rem;
+  color: var(--ink-soft);
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 2.25rem 0 0;
+}
+
+.slab {
+  max-width: var(--page);
+  margin-inline: auto;
+  padding: clamp(2.5rem, 6vw, 4.5rem) 1.5rem;
+  border-top: 1px solid var(--rule);
+}
+
+.narrow { max-width: 44rem; }
+.narrow .lede, .narrow p { max-width: var(--measure); }
+
+/* ---------------------------------------------------------- principles -- */
+
+.principles {
+  list-style: none;
+  counter-reset: principle;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: clamp(2rem, 4vw, 2.75rem);
+}
+
+.principle {
+  counter-increment: principle;
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  gap: 0 1.25rem;
+  align-items: start;
+}
+
+.principle::before {
+  content: counter(principle);
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1.35;
+  text-align: right;
+  padding-top: 0.1em;
+}
+
+.principle-pair {
+  grid-column: 2;
+  margin: 0 0 0.6rem;
+  font-family: var(--serif);
+  font-size: clamp(1.25rem, 2.6vw, 1.6rem);
+  line-height: 1.28;
+  letter-spacing: -0.012em;
+}
+
+.principle-over { font-weight: 600; color: var(--ink); }
+
+.principle-conj {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--ink-faint);
+  padding-inline: 0.15em;
+}
+
+.principle-under { font-weight: 400; color: var(--ink-faint); }
+
+.principle-body {
+  /* Both of these sit in the second column; without saying so they would
+     auto-place into the narrow numeral column on the next row. */
+  grid-column: 2;
+  margin: 0;
+  color: var(--ink-soft);
+  max-width: var(--measure);
+}
+
+@media (max-width: 34rem) {
+  .principle { grid-template-columns: minmax(0, 1fr); }
+  .principle::before { text-align: left; padding-bottom: 0.25rem; }
+  .principle-pair, .principle-body { grid-column: 1; }
+}
+
+/* ----------------------------------------------------------- pullquote -- */
+
+.slab-quote { padding-block: clamp(2.5rem, 5vw, 4rem); }
+
+.pull {
+  margin: 0;
+  border-left: 3px solid var(--accent);
+  padding: 0.35rem 0 0.35rem clamp(1.25rem, 3vw, 2rem);
+}
+
+.pull p {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.2rem, 2.6vw, 1.55rem);
+  line-height: 1.4;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+  max-width: 40rem;
+  text-wrap: pretty;
+}
+
+/* ---------------------------------------------------------------- form -- */
+
+.counter {
+  margin: 1.25rem 0 0;
+  font-size: 0.95rem;
+  color: var(--ink-faint);
+}
+.counter strong {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  color: var(--accent);
+}
+
+.alert {
+  margin: 1.75rem 0 0;
+  padding: 0.9rem 1.1rem;
+  background: var(--warn-wash);
+  border-left: 3px solid var(--warn);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--warn);
+  max-width: var(--measure);
+}
+
+.form { margin-top: 2.5rem; max-width: 42rem; }
+
+.field-group {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 0;
+  padding: 1.75rem 0 2.25rem;
+}
+.field-group-last { padding-bottom: 0.5rem; }
+
+.legend {
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  padding: 0 0.6rem 0 0;
+  color: var(--ink);
+}
+
+.group-note {
+  margin: 0 0 1.5rem;
+  color: var(--ink-soft);
+  font-size: 0.97rem;
+  max-width: var(--measure);
+}
+
+.field { margin-bottom: 1.25rem; }
+
+.field label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.optional {
+  font-weight: 400;
+  color: var(--ink-faint);
+  font-size: 0.85em;
+  font-style: italic;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+textarea,
+select {
+  width: 100%;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.75rem;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+textarea { resize: vertical; min-height: 4.5rem; }
+
+select {
+  appearance: none;
+  /* Inline SVG chevron, so there is nothing extra to fetch. */
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%237d7468' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' d='M1 1.5 6 6.5l5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.8rem center;
+  background-size: 0.7rem;
+  padding-right: 2.2rem;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-wash);
+  outline: none;
+}
+
+.hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.87rem;
+  font-weight: 400;
+  color: var(--ink-faint);
+  line-height: 1.5;
+}
+
+.check {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: start;
+  margin: 1.5rem 0 0;
+  padding: 1rem 1.1rem;
+  background: var(--ground-sunk);
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.check input[type="checkbox"] {
+  margin: 0.25rem 0 0;
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--accent);
+  flex: none;
+}
+
+.check strong { display: block; font-weight: 600; color: var(--ink); }
+.check .hint { margin-top: 0.35rem; }
+
+.check-inline {
+  background: none;
+  padding: 0;
+  margin: 0.25rem 0 0;
+  align-items: center;
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+}
+.check-inline input[type="checkbox"] { margin-top: 0; }
+
+/* Repeating rows: contacts and watched addresses. */
+
+.rows { display: grid; gap: 1.25rem; }
+
+.row {
+  padding: 1.1rem 1.2rem;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+.row-contact {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 1rem;
+}
+.row-contact .check-inline { grid-column: 1 / -1; margin-top: 0.5rem; }
+.row-contact .field:nth-last-of-type(-n + 2) { margin-bottom: 0.25rem; }
+
+@media (max-width: 34rem) {
+  .row-contact { grid-template-columns: minmax(0, 1fr); }
+}
+
+.row-watch .field { margin-bottom: 0; }
+
+.row-add { margin: 1rem 0 0; }
+
+.honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.submit { margin: 2rem 0 0; }
+
+/* -------------------------------------------------------------- button -- */
+
+.button {
+  display: inline-block;
+  font: inherit;
+  font-size: 0.97rem;
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 0.75rem 1.3rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.button:hover { background: var(--accent-deep); border-color: var(--accent-deep); color: #fff; }
+
+.button-primary { padding: 0.85rem 1.6rem; font-size: 1.02rem; }
+
+.button-quiet {
+  background: transparent;
+  color: var(--ink-soft);
+  border-color: var(--rule-strong);
+}
+.button-quiet:hover {
+  background: var(--ground-sunk);
+  color: var(--ink);
+  border-color: var(--ink-faint);
+}
+
+@media (prefers-color-scheme: dark) {
+  .button { color: #11221a; }
+  .button:hover { color: #11221a; }
+  .button-quiet { color: var(--ink-soft); }
+  .button-quiet:hover { color: var(--ink); }
+}
+
+/* ------------------------------------------------------------ footnote -- */
+
+.slab-footnote { padding-block: 2.5rem; }
+
+.footnote {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--ink-faint);
+  max-width: 38rem;
+  line-height: 1.6;
+}
+
+.fn-ref {
+  font-size: 0.55em;
+  vertical-align: super;
+  text-decoration: none;
+  color: var(--accent);
+  padding-inline: 0.1em;
+}
+
+.fn-back {
+  text-decoration: none;
+  color: var(--accent);
+  padding-right: 0.25rem;
+  font-weight: 600;
+}
+
+:target { scroll-margin-top: 2rem; }
+
+/* -------------------------------------------------------------- footer -- */
+
+.footer {
+  border-top: 1px solid var(--rule);
+  background: var(--ground-sunk);
+}
+
+.footer-line {
+  max-width: var(--page);
+  margin-inline: auto;
+  padding: 2rem 1.5rem 3rem;
+  font-size: 0.9rem;
+  color: var(--ink-faint);
+  max-width: 52rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

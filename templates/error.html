@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ status }} — wellbe.social{% endblock %}
+{% block content %}
+<section class="slab narrow">
+  <p class="eyebrow">{{ status }}</p>
+  <h1 class="display">Well, that didn't work.</h1>
+  <p class="lede">{{ message }}</p>
+  <p><a class="button" href="/">Back to the start</a></p>
+</section>
+{% endblock %}

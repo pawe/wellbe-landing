@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Check your inbox — wellbe.social{% endblock %}
+{% block content %}
+<section class="slab narrow">
+  <p class="eyebrow">One more step</p>
+  <h1 class="display">Check your inbox.</h1>
+  <p class="lede">
+    We have sent a single message to <strong>{{ email }}</strong> with a link in it.
+    Click the link and you are on the list.
+  </p>
+  <p>
+    Until you do, nothing else happens: nobody you named is contacted, no watch you
+    set up can resolve, and if that address is not yours we simply forget the whole thing.
+  </p>
+  <p class="quiet">
+    Nothing in your inbox after a few minutes? Look in the spam folder, then
+    <a href="/#join">try again</a> — filling the form in twice does no harm.
+  </p>
+</section>
+{% endblock %}

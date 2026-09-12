@@ -1,0 +1,4 @@
+# Everything here is meant to be read.
+User-agent: *
+Allow: /
+Disallow: /confirm/
