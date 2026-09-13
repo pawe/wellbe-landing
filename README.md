@@ -15,14 +15,23 @@ small progressive-enhancement script.
 
 ## What the page does
 
-Four things beyond the usual name-and-email, all of which came from the brief:
+Everything from the brief, asked in two steps rather than one.
 
-1. **Signup** — name, email, optional phone, optional "anything you want us to know".
-2. **Tell people you signed up** — list the people in your life, say how you know
-   each one, and tick a box to have us send that person exactly one message.
-3. **Watch for other people** — "let me know when these addresses sign up".
-4. **We inform you when we are ready for you** — the waiting list is drained by
-   `wellbe-landing invite`, oldest confirmed signup first.
+**Step one, on the front page.** Name, email, optional phone, optional "anything
+you want us to know", and one checkbox about being findable. Short enough to
+finish in a few seconds, and short enough to sit beside the slogan.
+
+**Step two, on the page the confirmation link opens.** The people you would bring,
+each with how you know them and an optional "tell them I signed up"; and the
+addresses you are waiting on, which is the "let me know when these people sign up"
+from the brief. None of it is required.
+
+The second step is deliberately not on the front page. Asking somebody for their
+address book before they have decided to join is the wrong order, and the page was
+half again as long for it. It is also the safer order — see below.
+
+The fourth thing from the brief, **"we inform you when we are ready for you"**, is
+`wellbe-landing invite`, which takes people off the list oldest confirmed first.
 
 ## The two rules the code is built around
 
@@ -31,8 +40,16 @@ covered by tests rather than left to care and attention.
 
 **Nothing leaves the building before an address is confirmed.** A signup queues one
 message: the confirmation. No invite is sent and no watch resolves until somebody
-clicks the link. Otherwise typing a stranger's address into the form would be a way
-of making us mail their friends.
+follows the link, and the second step refuses to open at all for an address that has
+never been confirmed. Otherwise typing a stranger's address into the form would be a
+way of making us mail their friends — or, worse, a way of filling their list in for
+them.
+
+The confirmation link is therefore also the key to the second step, and it keeps
+working: following it again is how somebody comes back to add more people later. The
+page shows what they have already added, and adding is append-only. Re-submitting a
+contact who has already been written to does nothing, which a unique index on
+`(signup_id, email)` guarantees rather than hopes for.
 
 **A watch needs consent from both sides.** "Let me know when `x@example.com` signs
 up" only ever resolves if the owner of that address has signed up, confirmed, *and*
@@ -88,7 +105,7 @@ Everything has a default except the first one.
 ```
 src/
   content.rs    every word on the page, so changing what we stand for is one diff
-  signup.rs     parsing, validation, and the one transaction that stores it all
+  signup.rs     parsing, validation, the signup transaction, and the second step
   outbox.rs     outgoing mail, written in the same transaction as its cause
   invite.rs     "we are ready for you"
   web.rs        routes, headers, static files

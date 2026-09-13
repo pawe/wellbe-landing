@@ -73,6 +73,57 @@ pub struct ThanksPage {
 #[template(path = "confirmed.html")]
 pub struct ConfirmedPage {
     pub name: String,
+    /// The token from the confirmation mail, which is also how the form on this
+    /// page posts back and how somebody returns to it later.
+    pub token: String,
+    /// True only on the click that did the confirming, so a return visit does
+    /// not greet somebody as though they had just arrived.
+    pub just_confirmed: bool,
+    pub relationships: Vec<Relationship>,
+    pub saved_contacts: Vec<crate::signup::SavedContact>,
+    pub saved_watches: Vec<crate::signup::SavedWatch>,
+    /// Blank rows, or what was typed if a submission bounced.
+    pub form: RawForm,
+    pub error: Option<String>,
+    /// Set straight after a successful add, to say what happened.
+    pub added: Option<crate::signup::Added>,
+}
+
+impl ConfirmedPage {
+    pub fn new(
+        person: crate::signup::Person,
+        token: String,
+        just_confirmed: bool,
+        relationships: Vec<Relationship>,
+        form: RawForm,
+    ) -> Self {
+        Self {
+            name: person.name,
+            token,
+            just_confirmed,
+            relationships,
+            saved_contacts: person.contacts,
+            saved_watches: person.watches,
+            form: form.padded(),
+            error: None,
+            added: None,
+        }
+    }
+
+    pub fn with_error(mut self, message: String) -> Self {
+        self.error = Some(message);
+        self
+    }
+
+    pub fn with_added(mut self, added: crate::signup::Added) -> Self {
+        self.added = Some(added);
+        self
+    }
+
+    /// Whether there is anything to show back to them yet.
+    pub fn has_saved(&self) -> bool {
+        !self.saved_contacts.is_empty() || !self.saved_watches.is_empty()
+    }
 }
 
 #[derive(Template)]

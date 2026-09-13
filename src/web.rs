@@ -36,7 +36,7 @@ pub fn router(state: AppState) -> Router {
 
     Router::new()
         .route("/", get(index).post(create_signup))
-        .route("/confirm/{token}", get(confirm))
+        .route("/confirm/{token}", get(confirm).post(add_people))
         .route("/health", get(health))
         .nest_service("/static", ServeDir::new("static").precompressed_gzip())
         .fallback(not_found)
@@ -132,11 +132,78 @@ async fn create_signup(State(state): State<AppState>, body: String) -> AppResult
     .into_response())
 }
 
+/// The confirmation link, which is also the way in to the second step and the
+/// way back to it afterwards.
 async fn confirm(State(state): State<AppState>, Path(token): Path<String>) -> AppResult<Response> {
-    match signup::confirm(&state.pool, &token).await? {
-        Some(name) => Ok(Page(ConfirmedPage { name }).into_response()),
-        None => Err(AppError::NotFound),
+    let Some((_, just_confirmed)) = signup::confirm(&state.pool, &token).await? else {
+        return Err(AppError::NotFound);
+    };
+
+    let person = signup::person_by_token(&state.pool, &token)
+        .await?
+        .ok_or(AppError::NotFound)?;
+    let relationships = relationships(&state.pool).await?;
+
+    Ok(Page(ConfirmedPage::new(
+        person,
+        token,
+        just_confirmed,
+        relationships,
+        RawForm::blank(None),
+    ))
+    .into_response())
+}
+
+/// The second step: the people you would bring, and the people you are waiting
+/// for, asked once somebody is actually on the list rather than crammed into
+/// the form that puts them there.
+async fn add_people(
+    State(state): State<AppState>,
+    Path(token): Path<String>,
+    body: String,
+) -> AppResult<Response> {
+    let person = signup::person_by_token(&state.pool, &token)
+        .await?
+        .ok_or(AppError::NotFound)?;
+
+    // An unconfirmed address cannot reach this, so nothing added here can be
+    // acted on by somebody who typed a stranger's address into the first form.
+    if !person.confirmed {
+        return Err(AppError::NotFound);
     }
+
+    let form = RawForm::from_body(&body);
+    let relationships = relationships(&state.pool).await?;
+
+    let parsed = form
+        .validated_contacts()
+        .and_then(|contacts| Ok((contacts, form.validated_watches(Some(&person.email))?)));
+
+    let (contacts, watches) = match parsed {
+        Ok(both) => both,
+        Err(error @ AppError::Invalid(_)) => {
+            let page = ConfirmedPage::new(person, token, false, relationships, form)
+                .with_error(error.public_message());
+            return Ok((StatusCode::UNPROCESSABLE_ENTITY, Page(page)).into_response());
+        }
+        Err(other) => return Err(other),
+    };
+
+    let added = signup::add_people(&state.pool, &token, &contacts, &watches)
+        .await?
+        .ok_or(AppError::NotFound)?;
+
+    // Re-read so the page shows the list as it now stands, including anybody
+    // who was written to in the same transaction.
+    let person = signup::person_by_token(&state.pool, &token)
+        .await?
+        .ok_or(AppError::NotFound)?;
+
+    Ok(Page(
+        ConfirmedPage::new(person, token, false, relationships, RawForm::blank(None))
+            .with_added(added),
+    )
+    .into_response())
 }
 
 async fn health(State(state): State<AppState>) -> Response {

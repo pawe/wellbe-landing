@@ -249,10 +249,27 @@ impl RawForm {
             ));
         }
 
-        // ---- contacts ----------------------------------------------------
+        Ok(Submission {
+            contacts: self.validated_contacts()?,
+            watches: self.validated_watches(Some(&email))?,
+            name,
+            email,
+            phone: trimmed(&self.phone, MAX_PHONE),
+            reason: trimmed(&self.reason, MAX_REASON),
+            discoverable: self.discoverable,
+            source: trimmed(&self.via, 60),
+        })
+    }
+
+    /// The contact rows on their own.
+    ///
+    /// Split out from [`RawForm::validate`] because the second step asks for
+    /// these after somebody is already on the list, where there is no name,
+    /// address or consent box to check — only the rows themselves.
+    pub fn validated_contacts(&self) -> AppResult<Vec<NewContact>> {
         let mut contacts = Vec::new();
 
-        for (index, row) in self.contacts.iter().enumerate() {
+        for row in &self.contacts {
             let Some(contact_name) = trimmed(&row.name, MAX_NAME) else {
                 continue; // A blank row is somebody who changed their mind.
             };
@@ -277,8 +294,6 @@ impl RawForm {
                 )));
             }
 
-            let _ = index;
-
             contacts.push(NewContact {
                 name: contact_name,
                 email: contact_email,
@@ -292,8 +307,16 @@ impl RawForm {
             }
         }
 
-        // ---- watches -----------------------------------------------------
+        Ok(contacts)
+    }
+
+    /// The watched addresses on their own, de-duplicated.
+    ///
+    /// `own_email` is excluded when known: watching yourself is a no-op, not a
+    /// mistake worth a lecture.
+    pub fn validated_watches(&self, own_email: Option<&str>) -> AppResult<Vec<String>> {
         let mut watches: Vec<String> = Vec::new();
+
         'fields: for field in &self.watches {
             for candidate in split_addresses(field) {
                 let Some(watch) = normalise_email(candidate) else {
@@ -302,8 +325,7 @@ impl RawForm {
                         candidate.trim().chars().take(60).collect::<String>()
                     )));
                 };
-                // Watching yourself is a no-op, not a mistake worth a lecture.
-                if watch != email && !watches.contains(&watch) {
+                if Some(watch.as_str()) != own_email && !watches.contains(&watch) {
                     watches.push(watch);
                 }
                 if watches.len() >= MAX_WATCHES {
@@ -312,16 +334,7 @@ impl RawForm {
             }
         }
 
-        Ok(Submission {
-            name,
-            email,
-            phone: trimmed(&self.phone, MAX_PHONE),
-            reason: trimmed(&self.reason, MAX_REASON),
-            discoverable: self.discoverable,
-            source: trimmed(&self.via, 60),
-            contacts,
-            watches,
-        })
+        Ok(watches)
     }
 }
 
@@ -404,7 +417,8 @@ pub async fn record(pool: &PgPool, submission: &Submission, base_url: &str) -> A
     for contact in &submission.contacts {
         sqlx::query(
             "insert into contact (signup_id, name, email, phone, relationship, tell_them)
-             values ($1, $2, $3, $4, coalesce((select key from relationship_kind where key = $5), 'other'), $6)",
+             values ($1, $2, $3, $4, coalesce((select key from relationship_kind where key = $5), 'other'), $6)
+             on conflict (signup_id, email) where email is not null do nothing",
         )
         .bind(signup_id)
         .bind(&contact.name)
@@ -448,9 +462,10 @@ pub async fn record(pool: &PgPool, submission: &Submission, base_url: &str) -> A
 
 /// Mark an address confirmed and release everything that was waiting on it.
 ///
-/// Returns the person's name, or `None` if the token means nothing — which is
-/// also what an already-used token looks like from the outside.
-pub async fn confirm(pool: &PgPool, token: &str) -> AppResult<Option<String>> {
+/// Returns the person's name and whether this call is what confirmed them, or
+/// `None` if the token means nothing. Following the link a second time is not
+/// an error: it is how somebody gets back to the second step later.
+pub async fn confirm(pool: &PgPool, token: &str) -> AppResult<Option<(String, bool)>> {
     let mut tx = pool.begin().await?;
 
     let row: Option<(Uuid, String, String, bool, Option<time::OffsetDateTime>)> = sqlx::query_as(
@@ -466,7 +481,7 @@ pub async fn confirm(pool: &PgPool, token: &str) -> AppResult<Option<String>> {
 
     if confirmed_at.is_some() {
         // Idempotent: following the link twice is not an error.
-        return Ok(Some(name));
+        return Ok(Some((name, false)));
     }
 
     sqlx::query("update signup set confirmed_at = now() where id = $1")
@@ -478,7 +493,203 @@ pub async fn confirm(pool: &PgPool, token: &str) -> AppResult<Option<String>> {
     send_invites(&mut tx, signup_id, &name).await?;
 
     tx.commit().await?;
-    Ok(Some(name))
+    Ok(Some((name, true)))
+}
+
+/// One contact as it is shown back to the person who added it.
+#[derive(Debug, Clone)]
+pub struct SavedContact {
+    pub name: String,
+    pub relationship: String,
+    pub told: bool,
+}
+
+/// One watched address as it is shown back.
+#[derive(Debug, Clone)]
+pub struct SavedWatch {
+    pub email: String,
+    pub matched: bool,
+}
+
+/// Everything the second step needs to render itself.
+#[derive(Debug, Clone)]
+pub struct Person {
+    pub name: String,
+    pub email: String,
+    pub confirmed: bool,
+    pub contacts: Vec<SavedContact>,
+    pub watches: Vec<SavedWatch>,
+}
+
+/// Look somebody up by the token from their confirmation mail.
+///
+/// That token is the only key to the second step. There is deliberately no
+/// other way in: a page that let you reach somebody's list of people by typing
+/// their address would be a way of reading it.
+pub async fn person_by_token(pool: &PgPool, token: &str) -> AppResult<Option<Person>> {
+    let row: Option<(String, String, Option<time::OffsetDateTime>)> =
+        sqlx::query_as("select name, email, confirmed_at from signup where confirm_token = $1")
+            .bind(token)
+            .fetch_optional(pool)
+            .await?;
+
+    let Some((name, email, confirmed_at)) = row else {
+        return Ok(None);
+    };
+
+    let contacts: Vec<(String, String, bool)> = sqlx::query_as(
+        "select c.name, coalesce(k.label, c.relationship), c.told_at is not null
+           from contact c
+           left join relationship_kind k on k.key = c.relationship
+           join signup s on s.id = c.signup_id
+          where s.confirm_token = $1
+          order by c.created_at",
+    )
+    .bind(token)
+    .fetch_all(pool)
+    .await?;
+
+    let watches: Vec<(String, bool)> = sqlx::query_as(
+        "select w.email, w.matched_at is not null
+           from email_watch w
+           join signup s on s.id = w.signup_id
+          where s.confirm_token = $1
+          order by w.created_at",
+    )
+    .bind(token)
+    .fetch_all(pool)
+    .await?;
+
+    Ok(Some(Person {
+        name,
+        email,
+        confirmed: confirmed_at.is_some(),
+        contacts: contacts
+            .into_iter()
+            .map(|(name, relationship, told)| SavedContact {
+                name,
+                relationship,
+                told,
+            })
+            .collect(),
+        watches: watches
+            .into_iter()
+            .map(|(email, matched)| SavedWatch { email, matched })
+            .collect(),
+    }))
+}
+
+/// What the second step did.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Added {
+    pub contacts: usize,
+    pub watches: usize,
+}
+
+impl Added {
+    /// One sentence saying what just happened, for the page to show back.
+    pub fn summary(&self) -> String {
+        fn people(count: usize) -> String {
+            if count == 1 {
+                "one person".to_owned()
+            } else {
+                format!("{count} people")
+            }
+        }
+        fn addresses(count: usize) -> String {
+            if count == 1 {
+                "one address".to_owned()
+            } else {
+                format!("{count} addresses")
+            }
+        }
+
+        match (self.contacts, self.watches) {
+            (0, 0) => "There was nothing filled in, so nothing changed.".to_owned(),
+            (c, 0) => format!("Added {}.", people(c)),
+            (0, w) => format!("Now watching {}.", addresses(w)),
+            (c, w) => format!("Added {}, and now watching {}.", people(c), addresses(w)),
+        }
+    }
+}
+
+/// Append people to somebody's list, after they are already on it.
+///
+/// Append rather than replace: a contact we have already written to carries the
+/// record of that, and an edit screen that could silently drop such a row would
+/// let somebody be told twice. Adding is the only operation this offers.
+///
+/// Returns `None` if the token means nothing, or if the address behind it has
+/// never been confirmed — the same confirmation gate as everywhere else.
+pub async fn add_people(
+    pool: &PgPool,
+    token: &str,
+    contacts: &[NewContact],
+    watches: &[String],
+) -> AppResult<Option<Added>> {
+    let mut tx = pool.begin().await?;
+
+    let row: Option<(Uuid, String, String, bool, Option<time::OffsetDateTime>)> = sqlx::query_as(
+        "select id, name, email, discoverable, confirmed_at
+           from signup where confirm_token = $1 for update",
+    )
+    .bind(token)
+    .fetch_optional(&mut *tx)
+    .await?;
+
+    let Some((signup_id, name, email, discoverable, confirmed_at)) = row else {
+        return Ok(None);
+    };
+
+    if confirmed_at.is_none() {
+        return Ok(None);
+    }
+
+    let mut added_contacts = 0;
+    for contact in contacts {
+        // Somebody already on this person's list is left exactly as they are,
+        // which is what stops a reload from writing to them twice.
+        let done = sqlx::query(
+            "insert into contact (signup_id, name, email, phone, relationship, tell_them)
+             values ($1, $2, $3, $4, coalesce((select key from relationship_kind where key = $5), 'other'), $6)
+             on conflict (signup_id, email) where email is not null do nothing",
+        )
+        .bind(signup_id)
+        .bind(&contact.name)
+        .bind(&contact.email)
+        .bind(&contact.phone)
+        .bind(&contact.relationship)
+        .bind(contact.tell_them)
+        .execute(&mut *tx)
+        .await?;
+        added_contacts += done.rows_affected() as usize;
+    }
+
+    let mut added_watches = 0;
+    for watch in watches {
+        let done = sqlx::query(
+            "insert into email_watch (signup_id, email) values ($1, $2)
+             on conflict (signup_id, email) do nothing",
+        )
+        .bind(signup_id)
+        .bind(watch)
+        .execute(&mut *tx)
+        .await?;
+        added_watches += done.rows_affected() as usize;
+    }
+
+    // This person is already confirmed, so anything they just added acts now.
+    // Both of these only ever touch rows that have not fired yet, which is what
+    // makes coming back to this page safe.
+    release_watches(&mut tx, signup_id, &name, &email, discoverable).await?;
+    send_invites(&mut tx, signup_id, &name).await?;
+
+    tx.commit().await?;
+
+    Ok(Some(Added {
+        contacts: added_contacts,
+        watches: added_watches,
+    }))
 }
 
 /// Resolve watches in both directions, and only ever between two people who

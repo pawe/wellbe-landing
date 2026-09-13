@@ -61,6 +61,25 @@ fn unique(local: &str) -> String {
     format!("{local}-{}@example.test", Uuid::new_v4().simple())
 }
 
+async fn post_to(router: &axum::Router, uri: &str, body: String) -> StatusCode {
+    let request = Request::builder()
+        .method("POST")
+        .uri(uri)
+        .header("content-type", "application/x-www-form-urlencoded")
+        .body(Body::from(body))
+        .unwrap();
+
+    router.clone().oneshot(request).await.unwrap().status()
+}
+
+async fn token_for(pool: &PgPool, email: &str) -> String {
+    sqlx::query_scalar("select confirm_token from signup where email = $1")
+        .bind(email)
+        .fetch_one(pool)
+        .await
+        .expect("no such signup")
+}
+
 async fn post(router: &axum::Router, body: String) -> StatusCode {
     let request = Request::builder()
         .method("POST")
@@ -78,12 +97,7 @@ async fn get(router: &axum::Router, uri: &str) -> StatusCode {
 }
 
 async fn confirm(pool: &PgPool, router: &axum::Router, email: &str) -> StatusCode {
-    let token: String = sqlx::query_scalar("select confirm_token from signup where email = $1")
-        .bind(email)
-        .fetch_one(pool)
-        .await
-        .expect("no such signup");
-
+    let token = token_for(pool, email).await;
     get(router, &format!("/confirm/{token}")).await
 }
 
@@ -339,5 +353,188 @@ async fn a_meaningless_confirmation_link_is_a_plain_404() {
     assert_eq!(
         get(&router, "/confirm/not-a-real-token").await,
         StatusCode::NOT_FOUND
+    );
+}
+
+// ---------------------------------------------------------------------------
+// The second step: contacts and watches are asked for after somebody is on the
+// list, on the page their confirmation link opens.
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn people_added_in_the_second_step_are_contacted_straight_away() {
+    let Some((pool, router)) = harness().await else {
+        eprintln!("skipping: no TEST_DATABASE_URL");
+        return;
+    };
+
+    let me = unique("second-step");
+    let friend = unique("second-step-friend");
+
+    post(
+        &router,
+        form(&[("name", "Joiner"), ("email", &me), ("consent", "1")]),
+    )
+    .await;
+    assert_eq!(confirm(&pool, &router, &me).await, StatusCode::OK);
+    assert_eq!(outbox_kinds(&pool, &me).await, vec!["confirm"]);
+
+    let token = token_for(&pool, &me).await;
+    assert_eq!(
+        post_to(
+            &router,
+            &format!("/confirm/{token}"),
+            form(&[
+                ("contact_name", "Ada"),
+                ("contact_email", &friend),
+                ("contact_phone", ""),
+                ("contact_relationship", "close_friend"),
+                ("contact_tell", "0"),
+            ])
+        )
+        .await,
+        StatusCode::OK
+    );
+
+    // The person is already confirmed, so there is nothing left to wait for.
+    assert_eq!(
+        outbox_kinds(&pool, &friend).await,
+        vec!["invite"],
+        "a contact added after confirmation should be told without a second gate"
+    );
+}
+
+#[tokio::test]
+async fn the_second_step_does_not_tell_the_same_person_twice() {
+    let Some((pool, router)) = harness().await else {
+        eprintln!("skipping: no TEST_DATABASE_URL");
+        return;
+    };
+
+    let me = unique("no-double-telling");
+    let friend = unique("no-double-telling-friend");
+
+    post(
+        &router,
+        form(&[("name", "Joiner"), ("email", &me), ("consent", "1")]),
+    )
+    .await;
+    confirm(&pool, &router, &me).await;
+
+    let token = token_for(&pool, &me).await;
+    let rows = form(&[
+        ("contact_name", "Ada"),
+        ("contact_email", &friend),
+        ("contact_phone", ""),
+        ("contact_relationship", "friend"),
+        ("contact_tell", "0"),
+    ]);
+
+    post_to(&router, &format!("/confirm/{token}"), rows.clone()).await;
+    // Somebody reloads the page and submits again, or adds more people later.
+    post_to(&router, &format!("/confirm/{token}"), rows).await;
+
+    assert_eq!(
+        outbox_kinds(&pool, &friend).await.len(),
+        1,
+        "adding somebody twice must not send them a second message"
+    );
+}
+
+#[tokio::test]
+async fn the_second_step_is_shut_until_the_address_is_confirmed() {
+    let Some((pool, router)) = harness().await else {
+        eprintln!("skipping: no TEST_DATABASE_URL");
+        return;
+    };
+
+    let me = unique("unconfirmed-second-step");
+    let friend = unique("unconfirmed-second-step-friend");
+
+    // Signed up, but the link has not been followed.
+    post(
+        &router,
+        form(&[("name", "Unconfirmed"), ("email", &me), ("consent", "1")]),
+    )
+    .await;
+    let token = token_for(&pool, &me).await;
+
+    assert_eq!(
+        post_to(
+            &router,
+            &format!("/confirm/{token}"),
+            form(&[
+                ("contact_name", "Ada"),
+                ("contact_email", &friend),
+                ("contact_phone", ""),
+                ("contact_relationship", "friend"),
+                ("contact_tell", "0"),
+            ])
+        )
+        .await,
+        StatusCode::NOT_FOUND,
+        "otherwise typing a stranger's address into the first form would be a way to \
+         mail their friends"
+    );
+
+    assert!(outbox_kinds(&pool, &friend).await.is_empty());
+}
+
+#[tokio::test]
+async fn the_second_step_shows_back_what_is_already_there() {
+    let Some((pool, router)) = harness().await else {
+        eprintln!("skipping: no TEST_DATABASE_URL");
+        return;
+    };
+
+    let me = unique("shows-back");
+    let watched = unique("shows-back-watched");
+
+    post(
+        &router,
+        form(&[("name", "Joiner"), ("email", &me), ("consent", "1")]),
+    )
+    .await;
+    confirm(&pool, &router, &me).await;
+
+    let token = token_for(&pool, &me).await;
+    post_to(
+        &router,
+        &format!("/confirm/{token}"),
+        form(&[
+            ("contact_name", "Ada"),
+            ("contact_email", ""),
+            ("contact_phone", ""),
+            ("contact_relationship", "close_friend"),
+            ("watch_email", &watched),
+        ]),
+    )
+    .await;
+
+    let request = Request::builder()
+        .uri(format!("/confirm/{token}"))
+        .body(Body::empty())
+        .unwrap();
+    let response = router.oneshot(request).await.unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let bytes = http_body_util::BodyExt::collect(response.into_body())
+        .await
+        .unwrap()
+        .to_bytes();
+    let html = String::from_utf8_lossy(&bytes);
+
+    assert!(html.contains("Ada"), "the contact should be listed back");
+    assert!(
+        html.contains("Close friend"),
+        "and with the relationship spelled out"
+    );
+    assert!(
+        html.contains(&watched),
+        "the watched address should be listed back"
+    );
+    assert!(
+        html.contains("Hello again"),
+        "a return visit should not be greeted as a fresh confirmation"
     );
 }

@@ -406,45 +406,28 @@ a:hover { color: var(--accent); }
 
 .form { margin-top: 1.5rem; }
 
-/* The two optional sections. Closed until there is something in them, so the
-   card stays a form somebody will actually finish. */
-.fold {
-  margin: 1.25rem 0 0;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  background: var(--ground-sunk);
+/* The second step has a whole page, but the form should not use all of it:
+   held to this width the contact fields pair up two across instead of
+   straggling into a third column. */
+.slab .form { max-width: 32rem; }
+
+/* Fieldsets on the second step, where there is a whole page to use and the
+   sections can simply be labelled rather than folded away. */
+.field-group {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 0;
+  padding: 1.75rem 0 2rem;
 }
 
-.fold-summary {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.85rem 1rem;
-  cursor: pointer;
-  list-style: none;
-  font-size: 0.93rem;
+.legend {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  padding: 0 0.6rem 0 0;
+  color: var(--ink);
 }
-.fold-summary::-webkit-details-marker { display: none; }
-
-.fold-title { font-weight: 600; color: var(--ink); }
-.fold-note { color: var(--ink-faint); font-size: 0.8rem; font-style: italic; flex: none; }
-
-/* A chevron that turns, rather than the browser's default triangle. */
-.fold-title::before {
-  content: "";
-  display: inline-block;
-  width: 0.45rem;
-  height: 0.45rem;
-  margin-right: 0.6rem;
-  border-right: 1.8px solid var(--accent);
-  border-bottom: 1.8px solid var(--accent);
-  transform: translateY(-0.12em) rotate(-45deg);
-  transition: transform 140ms ease;
-}
-.fold[open] .fold-title::before { transform: translateY(-0.05em) rotate(45deg); }
-
-.fold-body { padding: 0 1rem 1.1rem; }
 
 .field-spaced { margin-top: 1.5rem; }
 
@@ -582,6 +565,61 @@ input:focus, textarea:focus, select:focus {
 }
 
 .submit { margin: 2rem 0 0; }
+
+/* ------------------------------------------------- the second step -------- */
+
+.notice {
+  margin: 1.75rem 0 0;
+  padding: 0.9rem 1.1rem;
+  background: var(--accent-wash);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--accent-deep);
+  font-weight: 600;
+  max-width: var(--measure);
+}
+
+.saved { margin-top: 2.25rem; }
+
+.saved-title {
+  margin: 1.5rem 0 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.saved-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+  max-width: var(--measure);
+}
+
+.saved-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 0.75rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.saved-name { font-weight: 600; }
+.saved-meta { color: var(--ink-faint); font-size: 0.9rem; }
+
+.saved-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+  background: var(--accent-wash);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+}
 
 /* -------------------------------------------------------------- button -- */
 

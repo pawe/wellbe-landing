@@ -1,21 +1,155 @@
 {% extends "base.html" %}
-{% block title %}You're on the list — wellbe.social{% endblock %}
+{% block title %}{% if just_confirmed %}You're on the list{% else %}Your place on the list{% endif %} — wellbe.social{% endblock %}
+
 {% block content %}
 <section class="slab narrow">
+  {% if just_confirmed %}
   <p class="eyebrow">Confirmed</p>
   <h1 class="display">You're on the list, {{ name }}.</h1>
   <p class="lede">
     That is everything we need from you. We will write to you when we are ready for you,
     and not before.
   </p>
-  <p>
-    Anyone you asked us to tell has been told, once, and only that you signed up.
-    Any addresses you asked us to watch are being watched, and will only ever resolve
-    if that person signs up and agrees to be found.
+  {% else %}
+  <p class="eyebrow">Your place on the list</p>
+  <h1 class="display">Hello again, {{ name }}.</h1>
+  <p class="lede">
+    You are on the list and there is nothing you have to do. This page is simply where
+    you can add the people in your life, whenever you feel like it.
   </p>
+  {% endif %}
+
+  {% if let Some(added) = added %}
+  <p class="notice" role="status">{{ added.summary() }}</p>
+  {% endif %}
+
+  {% if self.has_saved() %}
+  <div class="saved">
+    {% if !saved_contacts.is_empty() %}
+    <h2 class="saved-title">People you have added</h2>
+    <ul class="saved-list">
+      {% for contact in saved_contacts %}
+      <li>
+        <span class="saved-name">{{ contact.name }}</span>
+        <span class="saved-meta">{{ contact.relationship }}</span>
+        {% if contact.told %}<span class="saved-tag">told</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if !saved_watches.is_empty() %}
+    <h2 class="saved-title">Addresses you are waiting on</h2>
+    <ul class="saved-list">
+      {% for watch in saved_watches %}
+      <li>
+        <span class="saved-name">{{ watch.email }}</span>
+        {% if watch.matched %}<span class="saved-tag">here</span>{% else %}<span class="saved-meta">still waiting</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if let Some(message) = error %}
+  <p class="alert" role="alert" tabindex="-1" id="form-error">{{ message }}</p>
+  {% endif %}
+
+  <form class="form" method="post" action="/confirm/{{ token }}" novalidate>
+
+    <fieldset class="field-group">
+      <legend class="legend">The people you would bring</legend>
+      <p class="group-note">
+        Who are the people in your life, and how do you know them? We are not guessing this
+        from your contacts or your behaviour — you tell us, or you do not. Tick the last box
+        and we will send that person one message saying you signed up. Nothing else, ever.
+      </p>
+
+      <div class="rows" id="contact-rows">
+      {% for row in form.contacts %}
+        <div class="row row-contact">
+          <div class="field">
+            <label for="contact_name_{{ loop.index0 }}">Name</label>
+            <input type="text" id="contact_name_{{ loop.index0 }}" name="contact_name"
+                   maxlength="120" value="{{ row.name }}">
+          </div>
+          <div class="field">
+            <label for="contact_relationship_{{ loop.index0 }}">How do you know them?</label>
+            <select id="contact_relationship_{{ loop.index0 }}" name="contact_relationship">
+              <option value=""{% if row.relationship.is_empty() %} selected{% endif %}>Choose…</option>
+            {% for relationship in relationships %}
+              <option value="{{ relationship.key }}"{% if relationship.key == row.relationship %} selected{% endif %}>{{ relationship.label }}</option>
+            {% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label for="contact_email_{{ loop.index0 }}">Their email <span class="optional">optional</span></label>
+            <input type="email" id="contact_email_{{ loop.index0 }}" name="contact_email"
+                   inputmode="email" maxlength="254" value="{{ row.email }}">
+          </div>
+          <div class="field">
+            <label for="contact_phone_{{ loop.index0 }}">Their phone <span class="optional">optional</span></label>
+            <input type="tel" id="contact_phone_{{ loop.index0 }}" name="contact_phone"
+                   maxlength="40" value="{{ row.phone }}">
+          </div>
+          <label class="check check-inline">
+            <input type="checkbox" name="contact_tell" value="{{ loop.index0 }}" {% if row.tell %}checked{% endif %}>
+            <span>Tell them I signed up</span>
+          </label>
+        </div>
+      {% endfor %}
+      </div>
+
+      <p class="row-add">
+        <button type="button" class="button button-quiet" data-add-row="contact-rows" hidden>
+          Add another person
+        </button>
+      </p>
+    </fieldset>
+
+    <fieldset class="field-group">
+      <legend class="legend">The people you are waiting for</legend>
+      <p class="group-note">
+        Tell us whose arrival would make this worth joining, and we will let you know when
+        they get here. This only ever resolves if that person signs up <em>and</em> agrees to
+        be found by people who already have their address. Until both are true you hear
+        nothing, because otherwise this box would be a way of finding out where somebody is.
+      </p>
+
+      <div class="rows" id="watch-rows">
+      {% for watch in form.watches %}
+        <div class="row row-watch">
+          <div class="field">
+            <label for="watch_email_{{ loop.index0 }}">Email address</label>
+            <input type="email" id="watch_email_{{ loop.index0 }}" name="watch_email"
+                   inputmode="email" maxlength="1000" value="{{ watch }}"
+                   placeholder="you can paste a whole list here">
+          </div>
+        </div>
+      {% endfor %}
+      </div>
+
+      <p class="row-add">
+        <button type="button" class="button button-quiet" data-add-row="watch-rows" hidden>
+          Add another address
+        </button>
+      </p>
+    </fieldset>
+
+    <p class="submit">
+      <button type="submit" class="button button-primary">Add them</button>
+    </p>
+  </form>
+
   <p class="quiet">
-    Changed your mind, or want everything we hold about you deleted? Reply to the mail
-    we just sent and a person will do it.
+    Nothing here is required, and you can come back to it later: the link in your
+    confirmation email opens this page again. Want everything we hold about you deleted?
+    Reply to that email and a person will do it.
   </p>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/app.js" defer></script>
 {% endblock %}
